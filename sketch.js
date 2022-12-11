@@ -12,9 +12,20 @@ let started = false;
 let alpha = 255;
 let fade = 0;
 let fader = 3;
+let textToShow = false;
+let textShown = false;
+let drawOnScreen = false;
+let DateTime = luxon.DateTime;
+let Intervals = luxon.Interval;
+let c;
+let weeksActuallySpent;
+let timeSpent;
+let isEnd = false;
+let finalTimeRecorded = false;
+let finalMill = 0;
 
 function setup() {
-  createCanvas(1280, 720);
+  c = createCanvas(1280, 720);
   background(255);
   //   l1Init,
   //     l1End,
@@ -26,31 +37,69 @@ function setup() {
   //     l4End,
   //     l5Init,
   //     (l5End = createVector(0, 0));
-  console.log(data[0].events[5]);
+  //console.log(data[0].events[5]);
   count = 0;
   randNum = int(random(data.lenght));
+  let inDate = DateTime.fromISO(data[randNum].dateIncarcerated);
+  let outDate;
+  if (data[randNum].released) {
+    outDate = DateTime.fromISO(data[randNum].dateReleased);
+  } else {
+    outDate = DateTime.now();
+  }
+  let i = Intervals.fromDateTimes(inDate, outDate);
+  weeksActuallySpent = int(i.length("days") / 7);
+  console.log(weeksActuallySpent);
 }
 
 function draw() {
   //background(220);
   console.log(count);
   let mill = millis();
+  //timeSpent = mill / 3600;
+  if (count == weeksActuallySpent) {
+    isEnd = true;
+  }
+  if (data[randNum].events[count] && !textShown) {
+    textToShow = true;
+  }
   //console.log(data[randNum].events[count]);
-  if (!started) {
+  if (isEnd) {
+    background(255);
+    if (!finalTimeRecorded) {
+      finalMill = mill;
+      timeSpent = int(finalMill / 3600);
+    }
+    finalTimeRecorded = true;
+    toBeShown = `${data[randNum].endText}. You spent ${timeSpent} in this installation. ${data[randNum].name} has spend ${weeksActuallySpent} in jail.`;
+    fade = 0;
+    alpha = 255;
+    drawOnScreen = false;
+    writeText();
+  } else if (!started) {
+    drawOnScreen = false;
     toBeShown = data[randNum].initText;
     writeText();
     if (alpha <= 0) {
       alpha = 255;
       started = true;
+      drawOnScreen = true;
     }
-  } else if (data[randNum].events[count]) {
+  } else if (textToShow) {
+    drawOnScreen = false;
     toBeShown = data[randNum].events[count];
     console.log(toBeShown);
     writeText();
-  } else if (count > 0 && count % 5 == 0 && mill - pMill > 2000) {
+    if (alpha <= 0) {
+      alpha = 255;
+      textToShow = false;
+      textShown = true;
+      drawOnScreen = true;
+    }
+  } else if (count > 0 && count % 5 == 0 && mill - pMill > 1250) {
     background(255);
     pMill = mill;
-  } else if (mouseIsPressed) {
+  } else if (mouseIsPressed && drawOnScreen) {
     strokeWeight(4);
     line(mouseX, mouseY, pmouseX, pmouseY);
   }
@@ -64,9 +113,12 @@ function mousePressed() {
 }
 
 function mouseReleased() {
-  endMouseX = pmouseX;
-  endMouseY = pmouseY;
-  checkLine();
+  if (drawOnScreen) {
+    endMouseX = pmouseX;
+    endMouseY = pmouseY;
+    checkLine();
+  }
+
   //console.log("hello",endMouseX, endMouseY);
   //addToStore();
 }
@@ -97,6 +149,15 @@ function keyPressed() {
   if (keyCode === 66) {
     console.log("Key  typed");
     fade = fader;
+    let now = DateTime.now().toString();
+    console.log(now);
+    //fullscreen(true);
+  }
+}
+
+function resetAlpha() {
+  if (alpha <= 0) {
+    alpha = 255;
   }
 }
 
