@@ -11,7 +11,7 @@ let randNum;
 let started = false;
 let alpha = 255;
 let fade = 0;
-let fader = 3;
+let fader = 1;
 let textToShow = false;
 let textShown = false;
 let drawOnScreen = false;
@@ -23,6 +23,7 @@ let timeSpent;
 let isEnd = false;
 let finalTimeRecorded = false;
 let finalMill = 0;
+let countWhileTextShown = 0;
 
 function setup() {
   c = createCanvas(1280, 720);
@@ -40,6 +41,9 @@ function setup() {
   //console.log(data[0].events[5]);
   count = 0;
   randNum = int(random(data.lenght));
+  console.log(data.length);
+  console.log(randNum);
+  randNum = 1;
   let inDate = DateTime.fromISO(data[randNum].dateIncarcerated);
   let outDate;
   if (data[randNum].released) {
@@ -54,9 +58,12 @@ function setup() {
 
 function draw() {
   //background(220);
-  console.log(count);
+  //console.log(count);
   let mill = millis();
   //timeSpent = mill / 3600;
+  if (count > countWhileTextShown) {
+    textShown = false;
+  }
   if (count == weeksActuallySpent) {
     isEnd = true;
   }
@@ -64,19 +71,7 @@ function draw() {
     textToShow = true;
   }
   //console.log(data[randNum].events[count]);
-  if (isEnd) {
-    background(255);
-    if (!finalTimeRecorded) {
-      finalMill = mill;
-      timeSpent = int(finalMill / 3600);
-    }
-    finalTimeRecorded = true;
-    toBeShown = `${data[randNum].endText}. You spent ${timeSpent} in this installation. ${data[randNum].name} has spend ${weeksActuallySpent} in jail.`;
-    fade = 0;
-    alpha = 255;
-    drawOnScreen = false;
-    writeText();
-  } else if (!started) {
+  if (!started) {
     drawOnScreen = false;
     toBeShown = data[randNum].initText;
     writeText();
@@ -88,7 +83,8 @@ function draw() {
   } else if (textToShow) {
     drawOnScreen = false;
     toBeShown = data[randNum].events[count];
-    console.log(toBeShown);
+    //console.log(toBeShown);
+    countWhileTextShown = count;
     writeText();
     if (alpha <= 0) {
       alpha = 255;
@@ -96,9 +92,21 @@ function draw() {
       textShown = true;
       drawOnScreen = true;
     }
-  } else if (count > 0 && count % 5 == 0 && mill - pMill > 1250) {
+  } else if (count > 0 && count % 5 == 0 && mill - pMill > 2000) {
     background(255);
     pMill = mill;
+  } else if (isEnd) {
+    background(255);
+    if (!finalTimeRecorded) {
+      finalMill = mill;
+      timeSpent = int(finalMill / 60000);
+    }
+    finalTimeRecorded = true;
+    toBeShown = `${data[randNum].endText}. You spent ${timeSpent} minutes in this installation. ${data[randNum].name} has spend ${weeksActuallySpent} weeks in jail.`;
+    fade = 0;
+    alpha = 255;
+    drawOnScreen = false;
+    writeText();
   } else if (mouseIsPressed && drawOnScreen) {
     strokeWeight(4);
     line(mouseX, mouseY, pmouseX, pmouseY);
