@@ -24,9 +24,14 @@ let isEnd = false;
 let finalTimeRecorded = false;
 let finalMill = 0;
 let countWhileTextShown = 0;
+let doneFading = false;
+let bgAlpha = 0;
+let bgFader = 5;
+let textDisplayStarted = false;
+let showBailBox = false;
 
 function setup() {
-  c = createCanvas(1280, 720);
+  c = createCanvas(windowWidth, 720);
   background(255);
   //   l1Init,
   //     l1End,
@@ -43,7 +48,7 @@ function setup() {
   randNum = int(random(data.lenght));
   console.log(data.length);
   console.log(randNum);
-  randNum = 1;
+  randNum = 2;
   let inDate = DateTime.fromISO(data[randNum].dateIncarcerated);
   let outDate;
   if (data[randNum].released) {
@@ -73,7 +78,7 @@ function draw() {
   //console.log(data[randNum].events[count]);
   if (!started) {
     drawOnScreen = false;
-    toBeShown = data[randNum].initText;
+    toBeShown = `${data[randNum].initText}\n Tally off the number of weeks you spent in jail with him to leave. (once you are ready, press 'b' to begin)`;
     writeText();
     if (alpha <= 0) {
       alpha = 255;
@@ -85,16 +90,48 @@ function draw() {
     toBeShown = data[randNum].events[count];
     //console.log(toBeShown);
     countWhileTextShown = count;
-    writeText();
+    background(255, bgAlpha);
+    bgAlpha += bgFader;
+    console.log(textDisplayStarted);
+    if (!textDisplayStarted) {
+      pMill = mill;
+      textDisplayStarted = true;
+    }
+    console.log(pMill);
+    if (bgAlpha >= 255) {
+      doneFading = true;
+      bgAlpha = 0;
+      //pMill = mill;
+      drawOnScreen = true;
+    }
+    if (doneFading) {
+      writeText();
+    }
     if (alpha <= 0) {
       alpha = 255;
       textToShow = false;
       textShown = true;
       drawOnScreen = true;
+      textDisplayStarted = false;
     }
-  } else if (count > 0 && count % 5 == 0 && mill - pMill > 2000) {
-    background(255);
-    pMill = mill;
+  } else if (
+    count > 0 &&
+    count % 5 == 0 &&
+    mill - pMill > 1250 &&
+    !doneFading
+  ) {
+    drawOnScreen = false;
+    background(255, bgAlpha);
+    bgAlpha += bgFader;
+    if (bgAlpha >= 255) {
+      doneFading = true;
+      bgAlpha = 0;
+      pMill = mill;
+      drawOnScreen = true;
+    }
+    // if (doneFading) {
+
+    // }
   } else if (isEnd) {
     background(255);
     if (!finalTimeRecorded) {
@@ -102,12 +139,13 @@ function draw() {
       timeSpent = int(finalMill / 60000);
     }
     finalTimeRecorded = true;
-    toBeShown = `${data[randNum].endText}. You spent ${timeSpent} minutes in this installation. ${data[randNum].name} has spend ${weeksActuallySpent} weeks in jail.`;
+    toBeShown = `${data[randNum].endText}.\n You spent ${timeSpent} minutes in this installation. ${data[randNum].name} has spend ${weeksActuallySpent} weeks in jail.`;
     fade = 0;
     alpha = 255;
     drawOnScreen = false;
     writeText();
   } else if (mouseIsPressed && drawOnScreen) {
+    doneFading = false;
     strokeWeight(4);
     line(mouseX, mouseY, pmouseX, pmouseY);
   }
@@ -139,18 +177,27 @@ function checkLine() {
     count++;
     //addToStore();
     pMill = millis();
-    console.log(pMill);
+    //console.log(pMill);
   }
 }
 
 function writeText() {
   background(255);
+  //console.log(millis() - pMill);
+  // if (millis() - pMill > 2000) {
+  //   fade = fader;
+  // } else {
+  //   fade = 0;
+  // }
   fill(0, alpha);
   textFont("Cormorant Garamond");
   textAlign(CENTER);
   textSize(24);
   text(toBeShown, width / 2 - 450, height / 2, 900);
-  alpha -= fade;
+  //alpha -= fade;
+  if (millis() - pMill > 2000) {
+    alpha -= fade;
+  }
 }
 
 function keyPressed() {
@@ -159,7 +206,7 @@ function keyPressed() {
     fade = fader;
     let now = DateTime.now().toString();
     console.log(now);
-    //fullscreen(true);
+    fullscreen(true);
   }
 }
 
